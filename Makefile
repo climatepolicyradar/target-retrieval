@@ -22,7 +22,7 @@ install:
 
 ## Make Dataset
 data: requirements
-	python src/data/make_dataset.py data/raw data/processed
+	python src/data/make_dataset.py "data/raw/Labelled Training Data Set.xlsx" data/interim/targets_data.csv
 
 ## Delete all compiled Python files
 clean:
