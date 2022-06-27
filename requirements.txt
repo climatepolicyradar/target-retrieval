@@ -1,0 +1,11 @@
+click
+awscli
+flake8
+black
+python-dotenv>=0.20.0
+pre-commit
+jupyterlab
+ipywidgets
+tqdm
+pandas
+seaborn
