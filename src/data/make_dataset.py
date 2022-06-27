@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
+import re
 
 import click
 from dotenv import find_dotenv, load_dotenv
@@ -13,6 +14,8 @@ import pandas as pd
 def main(input_filepath, output_filepath):
     """
     Runs checks on data sheet from 'Labelled Training Data Set' Google Sheet and converts it into a CSV file.
+
+    Also strips text in brackets from column names for easier parsing later on.
     """
 
     logger = logging.getLogger(__name__)
@@ -40,6 +43,8 @@ def main(input_filepath, output_filepath):
         .sum()
         == 0
     ), "Target Description column contains missing values."
+
+    df.columns = [re.sub(r"\(.*\)", "", col).strip() for col in df.columns]
 
     df.to_csv(output_filepath, index=False)
 

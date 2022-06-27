@@ -8,4 +8,6 @@ jupyterlab
 ipywidgets
 tqdm
 pandas
+openpyxl
 seaborn
+spacy
