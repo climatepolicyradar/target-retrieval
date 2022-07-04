@@ -20,6 +20,14 @@ def import_and_check_sheet(
 
     df = pd.read_excel(input_filepath, sheet_name=sheet_name)
 
+    if (
+        not df["Date of Event "]
+        .dropna()
+        .apply(lambda year: re.match(r"^\d{4}$", str(year)))
+        .all()
+    ):
+        logger.warning("'Date of Event' column contains non-year values")
+
     for col in value_lists.columns:
         vals_to_check_for = set(value_lists[col].dropna().unique())
         vals_in_data_column = set(df[col].dropna())  # ignores empty values
