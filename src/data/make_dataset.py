@@ -72,12 +72,17 @@ def main(input_filepath, output_filepath):
         non_english_docs["Target Description (original language)"].tolist()
     )
 
-    all_data = pd.concat(
+    non_targets = import_and_check_sheet("Non-Targets", input_filepath, value_lists)
+    non_targets["is_target"] = False
+
+    all_targets = pd.concat(
         [original_dataset, nonverified_docs_dataset, non_english_docs],
         axis=0,
         ignore_index=True,
     )
+    all_targets["is_target"] = True
 
+    all_data = pd.concat([all_targets, non_targets], axis=0, ignore_index=True)
     all_data.to_csv(output_filepath, index=False)
 
 
