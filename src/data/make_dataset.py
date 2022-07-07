@@ -37,6 +37,10 @@ def import_and_check_sheet(
                 f"Column '{col}' contains the following values that are not in the list of unique values used for Google Sheets validation: {extra_vals}"
             )
 
+    # Values manually marked to skip which we didn't want to delete, to be able to come back to them later
+    if "Skip" in df.columns:
+        df = df.loc[df["Skip"].isnull()].drop(columns=["Skip"])
+
     assert (
         df[
             "Target Description (Paste entire text of target clause in original language)"
