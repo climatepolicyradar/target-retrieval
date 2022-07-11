@@ -1,4 +1,4 @@
-.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3
+.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 process_spreadsheet_data
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -21,8 +21,13 @@ install:
 	cp .env.example .env
 
 ## Make Dataset
-data: requirements
+data: requirements process_spreadsheet_data match_targets
+
+process_spreadsheet_data:
 	python src/data/make_dataset.py "data/raw/Labelled Training Data Set.xlsx" data/interim/targets_data.csv
+
+match_targets:
+	python src/data/match_targets_to_document_text.py data/interim/targets_data.csv data/interim/targets_matched_to_document_text.csv
 
 ## Delete all compiled Python files
 clean:
