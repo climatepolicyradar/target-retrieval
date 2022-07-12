@@ -53,6 +53,20 @@ def import_and_check_sheet(
     df.columns = [re.sub(r"\(.*\)", "", col).strip() for col in df.columns]
     df["Sheet Name"] = sheet_name
 
+    # These columns must have no empty values
+    col_errors = {}
+
+    for col in ["Document ID", "Country Name", "Target Description", "Date of Event"]:
+        is_null = df[col].isnull()
+        if is_null.any():
+            # Add 2 to each index to take into account the header row and that Google Sheets starts counting rows at 1
+            col_errors.update({col: [i + 2 for i in df[is_null].index.tolist()]})
+
+    if col_errors:
+        raise ValueError(
+            f"The following columns for sheet '{sheet_name}' have empty values at these rows: {col_errors}"
+        )
+
     return df
 
 
