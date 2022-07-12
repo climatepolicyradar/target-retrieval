@@ -51,6 +51,7 @@ def import_and_check_sheet(
     ), "Target Description column contains missing values."
 
     df.columns = [re.sub(r"\(.*\)", "", col).strip() for col in df.columns]
+    df["Sheet Name"] = sheet_name
 
     return df
 
@@ -67,13 +68,13 @@ def main(input_filepath, output_filepath):
 
     value_lists = pd.read_excel(input_filepath, sheet_name="Value Lists")
     original_dataset = import_and_check_sheet(
-        "Training Data Set", input_filepath, value_lists
+        "verified-docs", input_filepath, value_lists
     )
     nonverified_docs_dataset = import_and_check_sheet(
-        "Targets from Non-Verified Docs", input_filepath, value_lists
+        "non-verified-docs", input_filepath, value_lists
     )
     non_english_docs = import_and_check_sheet(
-        "Non-English-Language Targets", input_filepath, value_lists
+        "non-english-language", input_filepath, value_lists
     )
 
     logger.info(f"Translating {len(non_english_docs)} targets to English")
@@ -84,7 +85,7 @@ def main(input_filepath, output_filepath):
         non_english_docs["Target Description (original language)"].tolist()
     )
 
-    non_targets = import_and_check_sheet("Non-Targets", input_filepath, value_lists)
+    non_targets = import_and_check_sheet("non-targets", input_filepath, value_lists)
     non_targets["is_target"] = False
 
     all_targets = pd.concat(
