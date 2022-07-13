@@ -21,10 +21,13 @@ install:
 	cp .env.example .env
 
 ## Make Dataset
-data: requirements process_spreadsheet_data match_targets train_test_split
+data: requirements process_spreadsheet_data pdf2text_jsonl_file match_targets train_test_split
 
 process_spreadsheet_data:
 	python src/data/make_dataset.py "data/raw/Labelled Training Data Set.xlsx" data/interim/targets_data.csv
+
+pdf2text_jsonl_file:
+	python src/data/pdf2text.py data/interim/text_passages.jsonl
 
 match_targets:
 	python src/data/match_targets_to_document_text.py data/interim/targets_data.csv data/interim/targets_matched_to_document_text.csv
