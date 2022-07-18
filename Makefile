@@ -5,7 +5,6 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-S3PATH = project-target-retrieval
 PROFILE = default
 PROJECT_NAME = target-retrieval
 
@@ -46,23 +45,6 @@ clean:
 ## Lint using flake8
 lint:
 	flake8 src
-
-## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(S3PATH)
-else
-	aws s3 sync data/ s3://$(S3PATH) --profile $(PROFILE)
-endif
-
-## Download Data from S3
-sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(S3PATH) data
-else
-	aws s3 sync s3://$(S3PATH) data --profile $(PROFILE)
-endif
-
 
 #################################################################################
 # Self Documenting Commands                                                     #

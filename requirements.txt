@@ -16,3 +16,4 @@ googletrans==4.0.0rc1
 opensearch-py
 python-Levenshtein
 scikit-learn
+"dvc[s3]"
