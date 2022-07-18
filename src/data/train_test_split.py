@@ -46,19 +46,21 @@ def main(input_path, output_dir):
         - doc_ids["test"]
     )
 
-    cols_to_keep = [
-        "Document ID",
-        "Country Name",
-        "Date of Event",
-        "Sheet Name",
-        "Target Description",
-    ]
+    cols_to_keep_and_rename = {
+        "Document ID": "Document ID",
+        "Country Name": "Country Name",
+        "Date of Event": "Document Date",
+        "Sheet Name": "Sheet Name",
+        "Target Description": "text",
+        "Document md5sum": "md5hash",
+    }
 
     for split_name, split_doc_ids in doc_ids.items():
         split_data = targets_data.loc[
-            targets_data["Document ID"].isin(split_doc_ids), cols_to_keep
-        ]
-        split_data.to_csv(output_dir / f"{split_name}.csv", index=False)
+            targets_data["Document ID"].isin(split_doc_ids),
+            list(cols_to_keep_and_rename.keys()),
+        ].rename(columns=cols_to_keep_and_rename)
+        split_data.to_csv(output_dir / f"{split_name}_positives.csv", index=False)
 
 
 if __name__ == "__main__":

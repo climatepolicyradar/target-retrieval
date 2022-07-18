@@ -1,11 +1,10 @@
-.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 process_spreadsheet_data
+.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 process_spreadsheet_data train_test_split sample_negatives
 
 #################################################################################
 # GLOBALS                                                                       #
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-S3PATH = project-target-retrieval
 PROFILE = default
 PROJECT_NAME = target-retrieval
 
@@ -21,16 +20,22 @@ install:
 	cp .env.example .env
 
 ## Make Dataset
-data: requirements process_spreadsheet_data match_targets train_test_split
+data: requirements process_spreadsheet_data pdf2text_jsonl_file match_targets train_test_split sample_negatives
 
 process_spreadsheet_data:
 	python src/data/make_dataset.py "data/raw/Labelled Training Data Set.xlsx" data/interim/targets_data.csv
+
+pdf2text_jsonl_file:
+	python src/data/pdf2text.py data/interim/text_passages.jsonl
 
 match_targets:
 	python src/data/match_targets_to_document_text.py data/interim/targets_data.csv data/interim/targets_matched_to_document_text.csv
 
 train_test_split:
 	python src/data/train_test_split.py data/interim/targets_data.csv data/processed
+
+sample_negatives:
+	python src/data/sample_negatives.py data/interim/text_passages.jsonl data/processed
 
 ## Delete all compiled Python files
 clean:
@@ -40,23 +45,6 @@ clean:
 ## Lint using flake8
 lint:
 	flake8 src
-
-## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(S3PATH)
-else
-	aws s3 sync data/ s3://$(S3PATH) --profile $(PROFILE)
-endif
-
-## Download Data from S3
-sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(S3PATH) data
-else
-	aws s3 sync s3://$(S3PATH) data --profile $(PROFILE)
-endif
-
 
 #################################################################################
 # Self Documenting Commands                                                     #
