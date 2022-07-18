@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import List
 import os
+import re
 
 from tqdm.auto import tqdm
 from dotenv import find_dotenv, load_dotenv
@@ -34,12 +35,23 @@ def pdf2text_output_to_jsonl(json_path: Path) -> List[dict]:
         page_num = page["page_id"] + 1
 
         for text_block in page["text_blocks"]:
+            # The following line is messy because text_block['custom_attributes'] is sometimes a dict and sometimes null
+            if (text_block.get("custom_attributes", {}) or {}).get(
+                "pretty_list_string"
+            ):
+                text = text_block["custom_attributes"]["pretty_list_string"]
+            else:
+                text = "".join(text_block["text"]).strip()
+                # Remove HTML tags
+                # Sometimes `pretty_list_string` is empty, so we just have to remove the HTML-like tags in `text` instead
+                text = re.sub(r"<[^>]*>", "", text)
+
             jsonl_data.append(
                 {
                     "md5hash": md5hash,
                     "page_num": page_num,
                     "text_block_id": text_block["text_block_id"],
-                    "text": "".join(text_block["text"]).strip(),
+                    "text": text,
                 }
             )
 
