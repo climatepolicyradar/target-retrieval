@@ -8,6 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 
 from translate import translate_bulk
+from text_preprocess import TextProcessor
 
 
 def import_and_check_sheet(
@@ -110,7 +111,12 @@ def main(input_filepath, output_filepath):
     all_targets["is_target"] = True
 
     all_data = pd.concat([all_targets, non_targets], axis=0, ignore_index=True)
-    all_data.to_csv(output_filepath, index=False)
+
+    print("Processing text using `text_preprocess.TextProcessor`")
+    text_processor = TextProcessor()
+    data_processed = text_processor.process_dataframe(all_data, "Target Description")
+
+    data_processed.to_csv(output_filepath, index=False)
 
 
 if __name__ == "__main__":

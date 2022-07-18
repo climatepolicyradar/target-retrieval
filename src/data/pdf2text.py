@@ -8,6 +8,9 @@ import os
 from tqdm.auto import tqdm
 from dotenv import find_dotenv, load_dotenv
 import click
+import pandas as pd
+
+from text_preprocess import TextProcessor
 
 
 def pdf2text_output_to_jsonl(json_path: Path) -> List[dict]:
@@ -43,6 +46,14 @@ def pdf2text_output_to_jsonl(json_path: Path) -> List[dict]:
     return jsonl_data
 
 
+def jsonl_to_dataframe(jsonl_path: Path) -> pd.DataFrame:
+    """Load the jsonl file produced when running this script as a CLI to a pandas dataframe."""
+    with open(jsonl_path, "r") as f:
+        data = json.load(f)
+
+    return pd.DataFrame.from_records(data)
+
+
 @click.command()
 @click.argument("output_path", type=click.Path(dir_okay=False, path_type=str))
 def create_jsonl_file_from_pdf2text_outputs(output_path: str) -> None:
@@ -57,8 +68,12 @@ def create_jsonl_file_from_pdf2text_outputs(output_path: str) -> None:
     for json_path in tqdm(pdf2text_json_paths):
         jsonl_data += pdf2text_output_to_jsonl(json_path)
 
+    print("Processing text using `text_preprocess.TextProcessor`")
+    text_processor = TextProcessor()
+    processed_data = text_processor.process(jsonl_data, text_key="text")
+
     with open(output_path, "w") as f:
-        json.dump(jsonl_data, f)
+        json.dump(processed_data, f)
 
 
 if __name__ == "__main__":

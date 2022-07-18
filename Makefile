@@ -1,4 +1,4 @@
-.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 process_spreadsheet_data
+.PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3 process_spreadsheet_data train_test_split sample_negatives
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -21,7 +21,7 @@ install:
 	cp .env.example .env
 
 ## Make Dataset
-data: requirements process_spreadsheet_data pdf2text_jsonl_file match_targets train_test_split
+data: requirements process_spreadsheet_data pdf2text_jsonl_file match_targets train_test_split sample_negatives
 
 process_spreadsheet_data:
 	python src/data/make_dataset.py "data/raw/Labelled Training Data Set.xlsx" data/interim/targets_data.csv
@@ -34,6 +34,9 @@ match_targets:
 
 train_test_split:
 	python src/data/train_test_split.py data/interim/targets_data.csv data/processed
+
+sample_negatives:
+	python src/data/sample_negatives.py data/interim/text_passages.jsonl data/processed
 
 ## Delete all compiled Python files
 clean:
