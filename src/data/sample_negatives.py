@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional, List
 import math
 import click
+import json
 
 from Levenshtein import ratio
 from tqdm.auto import tqdm
@@ -67,6 +68,32 @@ class NegativesSampler:
             return candidates.sample(n, random_state=self._rnd)
         else:
             raise Exception("TODO: raise safety factor and try again")
+
+
+def create_summary_stats(
+    train: pd.DataFrame, validation: pd.DataFrame, test: pd.DataFrame
+) -> dict:
+    """Produce a dictionary with some descriptive statistics of the train, test and validation sets for export to a JSON file."""
+
+    summary_stats = {
+        "train": {
+            "num_targets": len(train.loc[train["is_target"]]),
+            "num_non_targets": len(train.loc[~train["is_target"]]),
+            "num_total": len(train),
+        },
+        "validation": {
+            "num_targets": len(validation.loc[validation["is_target"]]),
+            "num_non_targets": len(validation.loc[~validation["is_target"]]),
+            "num_total": len(validation),
+        },
+        "test": {
+            "num_targets": len(test.loc[test["is_target"]]),
+            "num_non_targets": len(test.loc[~test["is_target"]]),
+            "num_total": len(test),
+        },
+    }
+
+    return summary_stats
 
 
 @click.command()
@@ -162,6 +189,10 @@ def main(jsonl_path: Path, data_folder: Path):
         [test_positives, test_negatives_in_documents, test_negatives_random],
         ignore_index=True,
     )
+
+    summary_stats = create_summary_stats(train, validation, test)
+    with open(data_folder / "summary_stats.json", "w") as f:
+        json.dump(summary_stats, f, indent=4)
 
     # Export data
     train.to_csv(data_folder / "train.csv", index=False)

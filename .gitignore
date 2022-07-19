@@ -93,3 +93,4 @@ target/
 
 # Repo-specific files
 !/data/README.md
+/data
