@@ -79,16 +79,34 @@ def create_summary_stats(
         "train": {
             "num_targets": len(train.loc[train["is_target"]]),
             "num_non_targets": len(train.loc[~train["is_target"]]),
+            "num_documents_containing_targets": len(
+                train.loc[train["is_target"], "md5hash"].unique()
+            ),
+            "num_documents_containing_non_targets": len(
+                train.loc[~train["is_target"], "md5hash"].unique()
+            ),
             "num_total": len(train),
         },
         "validation": {
             "num_targets": len(validation.loc[validation["is_target"]]),
             "num_non_targets": len(validation.loc[~validation["is_target"]]),
+            "num_documents_containing_targets": len(
+                validation.loc[validation["is_target"], "md5hash"].unique()
+            ),
+            "num_documents_containing_non_targets": len(
+                validation.loc[~validation["is_target"], "md5hash"].unique()
+            ),
             "num_total": len(validation),
         },
         "test": {
             "num_targets": len(test.loc[test["is_target"]]),
             "num_non_targets": len(test.loc[~test["is_target"]]),
+            "num_documents_containing_targets": len(
+                test.loc[test["is_target"], "md5hash"].unique()
+            ),
+            "num_documents_containing_non_targets": len(
+                test.loc[~test["is_target"], "md5hash"].unique()
+            ),
             "num_total": len(test),
         },
     }
