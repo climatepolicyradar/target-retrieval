@@ -40,7 +40,7 @@ def import_and_check_sheet(
 
     # Values manually marked to skip which we didn't want to delete, to be able to come back to them later
     if "Skip" in df.columns:
-        df = df.loc[df["Skip"].isnull()].drop(columns=["Skip"])
+        df = df.loc[df["Skip"] != "TRUE"].drop(columns=["Skip"])
 
     assert (
         df[
