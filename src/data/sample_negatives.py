@@ -20,8 +20,8 @@ class NegativesSampler:
         self,
         target_list: List[str],
         n: int,
-        levenshtein_ratio_threshold: float = 0.95,
         document_md5_sums: Optional[List[str]] = None,
+        levenshtein_ratio_threshold: float = 0.95,
     ) -> pd.DataFrame:
         """
         Randomly sample negatives, and filter out passages with a levenshtein ratio >= to `levenshtein_ratio_threshold`.
@@ -69,6 +69,33 @@ class NegativesSampler:
         else:
             raise Exception("TODO: raise safety factor and try again")
 
+    def get_all_negatives(
+        self,
+        target_list: List[str],
+        document_md5_sums: List[str],
+        levenshtein_ratio_threshold: float = 0.95,
+    ) -> pd.DataFrame:
+        """
+        Return all negatives. Levenshtein distance is used to filter out similar passages to the targets.
+        """
+
+        candidates = self.pdf2text_data[
+            self.pdf2text_data["md5hash"].isin(document_md5_sums)
+        ]
+
+        print(
+            f"Comparing {len(target_list)} targets to all {len(candidates)} text blocks in the {len(document_md5_sums)} documents provided"
+        )
+
+        idxs_drop = set()
+
+        for target in tqdm(target_list):
+            for idx, row in candidates.iterrows():
+                if ratio(target, row["text"]) >= levenshtein_ratio_threshold:
+                    idxs_drop = idxs_drop | {idx}
+
+        return candidates.drop(idxs_drop)  # type: ignore
+
 
 def create_summary_stats(
     train: pd.DataFrame, validation: pd.DataFrame, test: pd.DataFrame
@@ -114,10 +141,24 @@ def create_summary_stats(
     return summary_stats
 
 
+def drop_documents_with_no_negatives(df_every_negative: pd.DataFrame) -> pd.DataFrame:
+    """Drop documents with no negatives."""
+
+    docs_to_drop = []
+
+    for md5hash, gb in df_every_negative.groupby("md5hash"):
+        if len(gb[~gb["is_target"]]) == 0:
+            docs_to_drop.append(md5hash)
+
+    return df_every_negative[~df_every_negative["md5hash"].isin(docs_to_drop)]
+
+
 @click.command()
 @click.argument("jsonl_path", type=click.Path(dir_okay=False, path_type=Path))
 @click.argument("data_folder", type=click.Path(file_okay=False, path_type=Path))
 def main(jsonl_path: Path, data_folder: Path):
+
+    RANDOM_STATE = 42
 
     # Import data
     train_positives = pd.read_csv(data_folder / "train_positives.csv")
@@ -139,7 +180,7 @@ def main(jsonl_path: Path, data_folder: Path):
     print("Sampling negatives for training set")
     train_sampler = NegativesSampler(
         jsonl_path,
-        random_state=42,
+        random_state=RANDOM_STATE,
     )
 
     train_negatives = train_sampler.sample_negatives_levenshtein(
@@ -156,7 +197,7 @@ def main(jsonl_path: Path, data_folder: Path):
     print("Sampling negatives for validation set")
     validation_sampler = NegativesSampler(
         jsonl_path,
-        random_state=210,
+        random_state=RANDOM_STATE * 5,
     )
 
     validation_negatives_in_documents = validation_sampler.sample_negatives_levenshtein(
@@ -186,7 +227,7 @@ def main(jsonl_path: Path, data_folder: Path):
     print("Sampling negatives for test set")
     test_sampler = NegativesSampler(
         jsonl_path,
-        random_state=420,
+        random_state=RANDOM_STATE * 10,
     )
 
     test_negatives_in_documents = test_sampler.sample_negatives_levenshtein(
@@ -216,6 +257,44 @@ def main(jsonl_path: Path, data_folder: Path):
     train.to_csv(data_folder / "train.csv", index=False)
     validation.to_csv(data_folder / "validation.csv", index=False)
     test.to_csv(data_folder / "test.csv", index=False)
+
+    # Also create test and validation sets with all negatives in each of the verified documents.
+    # This allows us to calculate document-level metrics for our machine learning models.
+    validation_all_negatives_in_documents = validation_sampler.get_all_negatives(
+        target_list=validation_positives["text"].unique().tolist(),
+        document_md5_sums=validation_positives["md5hash"].unique().tolist(),
+    )
+
+    validation_all_negatives_in_documents["is_target"] = False
+
+    test_all_negatives_in_documents = test_sampler.get_all_negatives(
+        target_list=test_positives["text"].unique().tolist(),
+        document_md5_sums=test_positives["md5hash"].unique().tolist(),
+    )
+
+    test_all_negatives_in_documents["is_target"] = False
+
+    validation_every_negative = pd.concat(
+        [validation_positives, validation_all_negatives_in_documents], ignore_index=True
+    )
+    test_every_negative = pd.concat(
+        [test_positives, test_all_negatives_in_documents], ignore_index=True
+    )
+
+    # drop documents with no negative examples - this means we couldn't find a file with the document's md5sum in the pdf2text output folder
+    validation_every_negative = drop_documents_with_no_negatives(
+        validation_every_negative
+    )
+    test_every_negative = drop_documents_with_no_negatives(test_every_negative)
+
+    summary_stats_every_negative = create_summary_stats(
+        train, validation_every_negative, test_every_negative
+    )
+    with open(data_folder / "summary_stats_large.json", "w") as f:
+        json.dump(summary_stats_every_negative, f, indent=4)
+
+    validation_every_negative.to_csv(data_folder / "validation_large.csv", index=False)
+    test_every_negative.to_csv(data_folder / "test_large.csv", index=False)
 
 
 if __name__ == "__main__":
