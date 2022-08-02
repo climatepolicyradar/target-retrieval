@@ -274,27 +274,25 @@ def main(jsonl_path: Path, data_folder: Path):
 
     test_all_negatives_in_documents["is_target"] = False
 
-    validation_every_negative = pd.concat(
+    validation_large = pd.concat(
         [validation_positives, validation_all_negatives_in_documents], ignore_index=True
     )
-    test_every_negative = pd.concat(
+    test_large = pd.concat(
         [test_positives, test_all_negatives_in_documents], ignore_index=True
     )
 
     # drop documents with no negative examples - this means we couldn't find a file with the document's md5sum in the pdf2text output folder
-    validation_every_negative = drop_documents_with_no_negatives(
-        validation_every_negative
-    )
-    test_every_negative = drop_documents_with_no_negatives(test_every_negative)
+    validation_large = drop_documents_with_no_negatives(validation_large)
+    test_large = drop_documents_with_no_negatives(test_large)
 
     summary_stats_every_negative = create_summary_stats(
-        train, validation_every_negative, test_every_negative
+        train, validation_large, test_large
     )
     with open(data_folder / "summary_stats_large.json", "w") as f:
         json.dump(summary_stats_every_negative, f, indent=4)
 
-    validation_every_negative.to_csv(data_folder / "validation_large.csv", index=False)
-    test_every_negative.to_csv(data_folder / "test_large.csv", index=False)
+    validation_large.to_csv(data_folder / "validation_large.csv", index=False)
+    test_large.to_csv(data_folder / "test_large.csv", index=False)
 
 
 if __name__ == "__main__":
